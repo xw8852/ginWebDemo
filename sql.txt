@@ -1,0 +1,49 @@
+--　发送验证码　记录表
+CREATE TABLE IF NOT EXISTS  sms_record (
+id VARCHAR(45)  ,
+phone CHAR(20) NOT NULL,
+msg VARCHAR(256) NOT NULL,
+status NUMERIC,
+sendTime TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+
+-- uuid　触发器
+CREATE TRIGGER `tri_auto_uuid_miwei`
+BEFORE INSERT ON `sms_record` FOR EACH ROW
+BEGIN
+  IF new.id IS NULL THEN
+    SET new.id = uuid();
+  END IF;
+END;;
+
+
+
+INSERT into sms_record (phone,msg,status)VALUES("18584835953","发送验证码1010101",1);
+
+SELECT * FROM sms_record WHERE sendTime >= (select date_add(now(), interval -5 minute));
+
+
+
+-- 创建用户　登录表
+CREATE TABLE IF NOT EXISTS user(id VARCHAR(45),
+phone VARCHAR(20) not NULL,
+password VARCHAR(200) NOT NULL,
+updateTime TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+
+CREATE TRIGGER `tri_auto_uuid_user`
+BEFORE INSERT ON `user` FOR EACH ROW
+BEGIN
+  IF new.id IS NULL THEN
+    SET new.id = uuid();
+  END IF;
+END;;
+
+-- 用户修改密码记录表
+-- COMMENT　'修改密码请求的ip' COMMENT '修改密码的设备'
+CREATE TABLE IF NOT EXISTS user_password_record(
+id int PRIMARY key auto_increment,
+userid VARCHAR(45) not NULL,
+password VARCHAR(20) NOT NULL,
+ip VARCHAR(20) NOT NULL ,
+device VARCHAR(50) not null ,
+updateTime TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
