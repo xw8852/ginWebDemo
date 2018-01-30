@@ -2,21 +2,23 @@ package v1
 
 import (
 	"github.com/gin-gonic/gin"
-	"math/rand"
-	"time"
-	"net/http"
+	"ginWebDemo/api"
 	"fmt"
 	"regexp"
-	"ginWebDemo/api"
+	"net/http"
+	"time"
+	"math/rand"
+	"ginWebDemo/api/v1/database"
 )
 
 type Phone struct {
 	Phone string `form:"phone" json:"phone" binding:"required"`
 }
 
-func SetupRounter() *gin.Engine {
-	r := gin.Default()
-	g := r.Group("/miapp/api/v1")
+/**
+发送手机验证码
+ */
+func SendMsgCode(g gin.IRoutes) {
 	g.POST("/getSmsCode", func(c *gin.Context) {
 		var phone Phone
 		err := c.BindJSON(&phone)
@@ -34,17 +36,17 @@ func SetupRounter() *gin.Engine {
 			api.SendError(c)
 			return
 		}
+		code := generateSmsCode()
+		database.InsertSmsCode(phone.Phone, string(code))
 		c.JSON(http.StatusOK, gin.H{
 			"msg":    "获取验证码成功",
 			"status": 200,
 			"data": gin.H{
-				"code": generateSmsCode(),
+				"code": code,
 			},
 		})
 	})
-	return r
 }
-
 func generateSmsCode() string {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return fmt.Sprint(rnd.Int31n(1000000))
