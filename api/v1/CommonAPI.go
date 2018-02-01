@@ -4,11 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"ginWebDemo/api"
 	"fmt"
-	"regexp"
 	"net/http"
 	"time"
 	"math/rand"
-	"ginWebDemo/api/v1/database"
+	"ginWebDemo/api/database"
+	"ginWebDemo/api/util"
 )
 
 type Phone struct {
@@ -19,19 +19,17 @@ type Phone struct {
 发送手机验证码
  */
 func SendMsgCode(g gin.IRoutes) {
-	g.POST("/getSmsCode", func(c *gin.Context) {
+	g.POST("/common/getSmsCode", func(c *gin.Context) {
 		var phone Phone
 		err := c.BindJSON(&phone)
 		api := &api.HttpError{}
-		if ( err != nil) {
-			fmt.Println(err)
-			//log.Fatal(err)
+		if err != nil {
+			util.Convert(err)
 			api.Message = "缺少必要参数"
 			api.SendError(c)
 			return
 		}
-		m, e := regexp.MatchString("1[3|5|7|8|9][0-9]{9}", phone.Phone)
-		if ( !m || e != nil) {
+		if ! util.ValidatePhone(phone.Phone) {
 			api.Message = "电话号码格式不正确"
 			api.SendError(c)
 			return

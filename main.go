@@ -8,6 +8,6 @@ import (
 func main() {
 	//gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
-	v1.SendMsgCode(g.Group("/api/v1/common"))
+	v1.Handle(g)
 	g.Run("0.0.0.0:8080")
 }

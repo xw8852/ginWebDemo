@@ -37,6 +37,9 @@ BEGIN
   END IF;
 END;;
 
+ALTER TABLE   user  ADD unique(phone)
+
+
 -- 用户修改密码记录表
 -- COMMENT　'修改密码请求的ip' COMMENT '修改密码的设备'
 CREATE TABLE IF NOT EXISTS user_password_record(
