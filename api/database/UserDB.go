@@ -2,27 +2,28 @@ package database
 
 import (
 	"ginWebDemo/api/util"
-	time2 "time"
 )
 
 type User struct {
 	Id         string
 	Phone      string
 	Password   string
-	UpdateTime time2.Time
+	UpdateTime string
 }
 
 func UserValidate(phone string) bool {
 	d := Default()
-	ok := false
 	defer d.Db.Close()
-	row, err := d.Db.Query("select id from user where phone = ？", phone)
+	ok := false
+	row, err := d.Db.Query("select id from user where phone = ?", phone)
 	defer row.Close()
 	if !util.Convert(err) {
 		var id string
-		err := row.Scan(&id)
-		if !util.Convert(err) && id != "" {
-			ok = true
+		if row.Next() {
+			err := row.Scan(&id)
+			if !util.Convert(err) && id != "" {
+				ok = true
+			}
 		}
 	}
 	return ok
@@ -31,14 +32,14 @@ func UserLogin(phone string, password string) (User, bool) {
 	d := Default()
 	var user User
 	ok := false
-	row, e := d.Db.Query("select * from user where phone = ? and password = ？", phone, password)
+	row, e := d.Db.Query("select id,phone,updateTime from user where phone = ? and password = ? ", phone, password)
 	if util.Convert(e) {
 		return user, ok
 	}
 	defer d.Db.Close()
 	defer row.Close()
 	for row.Next() {
-		e := row.Scan(&user.Id, &user.Phone, &user.Password, &user.UpdateTime)
+		e := row.Scan(&user.Id, &user.Phone, &user.UpdateTime)
 		if util.Convert(e) {
 			return user, ok
 		}
