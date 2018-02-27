@@ -25,19 +25,23 @@ SELECT * FROM sms_record WHERE sendTime >= (select date_add(now(), interval -5 m
 
 -- 创建用户　登录表
 CREATE TABLE IF NOT EXISTS user(id VARCHAR(45),
-phone VARCHAR(20) not NULL,
+logonName varchar(20) ,
+phone VARCHAR(20) ,
 password VARCHAR(200) NOT NULL,
 updateTime TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
 
-CREATE TRIGGER `tri_auto_uuid_user`
+
+CREATE TRIGGER `tri_user_insert_check`
 BEFORE INSERT ON `user` FOR EACH ROW
 BEGIN
-  IF new.id IS NULL THEN
+  IF new.logonName IS NOT NULL AND (SELECT COUNT(logonName) FROM user where logonName = new.logonName) > 0 THEN
+    SIGNAL SQLSTATE 'HY000' SET MESSAGE_TEXT = '账户已存在' ;
+ ELSEIF new.phone IS NOT NULL AND (SELECT COUNT(phone) FROM user where phone = new.phone) > 0 THEN
+      SIGNAL SQLSTATE 'HY000' SET MESSAGE_TEXT = '手机号码已存在' ;
+ ELSEIF new.id IS NULL THEN
     SET new.id = uuid();
   END IF;
-END;;
-
-ALTER TABLE   user  ADD unique(phone)
+END;
 
 
 -- 用户修改密码记录表
@@ -50,3 +54,46 @@ ip VARCHAR(20) NOT NULL ,
 device VARCHAR(50) not null ,
 updateTime TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- 用户基本信息表
+CREATE TABLE IF NOT EXISTS user_detail(
+userid VARCHAR(45) NOT NULL,
+nickname VARCHAR(20),
+sex INTEGER DEFAULT 0,
+age INTEGER DEFAULT 0,
+headimage VARCHAR(200)
+);
+-- 创建微信登录关联表
+CREATE TABLE IF NOT EXISTS user_wechat(userid VARCHAR(45) NOT NULL,
+wechatId VARCHAR(100) not NULL ,
+updateTime TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+--　产品表
+CREATE TABLE IF NOT EXISTS product (
+	id INT  not null primary key auto_increment,
+name VARCHAR(20),
+price INT
+) AUTO_INCREMENT=100;
+
+-- 产品代理等级表
+CREATE TABLE IF NOT EXISTS product_gradle(
+id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+productId INT DEFAULT 0,
+sortId INTEGER DEFAULT 0,
+gradle  VARCHAR(20) not NULL
+) AUTO_INCREMENT=100;
+
+－－　销售记录表
+CREATE TABLE `sale` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `productId` int(11) DEFAULT '0',
+  `userId` varchar(45) NOT NULL,
+  `count` int(11) DEFAULT '0',
+  `remark` int(11) DEFAULT '0',
+  `express` varchar(45) DEFAULT NULL,
+  `type` int(11) DEFAULT '0' COMMENT '0:　表示售出，１：表示进货，２：表示购买',
+  `saletime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `updatetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
