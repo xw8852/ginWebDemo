@@ -9,5 +9,5 @@ func main() {
 	//gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
 	v1.Handle(g)
-	g.Run("0.0.0.0:8080")
+	g.Run("0.0.0.0:8287")
 }
