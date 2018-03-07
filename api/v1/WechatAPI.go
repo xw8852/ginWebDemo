@@ -1,0 +1,84 @@
+package v1
+
+import (
+	"github.com/gin-gonic/gin"
+	"ginWebDemo/api"
+	"ginWebDemo/api/util"
+	"net/http"
+	"io/ioutil"
+	"encoding/json"
+	"ginWebDemo/api/database"
+	"time"
+	"math/rand"
+)
+
+type WechatCode struct {
+	code string `form:"WechatCode" json:"WechatCode" binding:"required"`
+}
+type WeChatInfo struct {
+	openid      string
+	session_key string
+	unionid     string
+	errcode     int
+	errmsg      string
+}
+
+/**
+* 微信
+* code 换取 session_key
+ */
+func wechatLogin(g gin.IRoutes) {
+	g.POST("'/wechat/login", func(c *gin.Context) {
+		var code WechatCode
+		err := c.BindJSON(&code)
+		api := &api.HttpError{}
+		if err != nil {
+			util.Convert(err)
+			api.Message = "缺少必要参数"
+			api.SendError(c)
+			return
+		}
+		response, _ := http.Get("https://api.weixin.qq.com/sns/jscode2session?" +
+			"appid=wxade5302ee9685fc8" +
+			"&secret=1037d10b8d1da6374606f511ee15cd25" +
+			"&js_code=" + code.code + "&grant_type=authorization_code")
+		defer response.Body.Close()
+		body, _ := ioutil.ReadAll(response.Body)
+		if response.StatusCode == 200 {
+			wechatinfo := WeChatInfo{}
+			json.Unmarshal(body, &wechatinfo)
+			if (wechatinfo.errmsg == "") {
+				user, ok := database.UserGetByWeChat(wechatinfo.openid)
+				if (ok) {
+					api.Data = user
+					api.Message = "用户登录成功"
+					return
+				}
+				logonName := ""
+				for {
+					t := time.Time{}
+					index := database.UserCount()
+					index = index + t.Year() - t.Minute() - t.Second() - rand.Intn(100)
+					logonName = "wx" + string(index)
+					ok := database.RegisterUserByName(logonName, "123456")
+					if ok {
+						break
+					}
+				}
+				user, _ = database.UserLoginByName(logonName, "123456")
+				database.InsertWeChatRelation(user.Id, wechatinfo.openid)
+				api.Data = user
+				api.Message = "用户登录成功"
+				return
+			} else {
+				api.Message = wechatinfo.errmsg
+				api.SendError(c)
+				return
+			}
+		} else {
+			api.Message = "用户微信登录失败"
+			api.SendError(c)
+			return
+		}
+	})
+}

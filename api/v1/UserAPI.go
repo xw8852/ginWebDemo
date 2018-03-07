@@ -60,7 +60,7 @@ func RegisterUser(g gin.IRoutes) {
 			api.SendError(context)
 			return
 		}
-		if database.UserValidate(l.Phone) {
+		if database.UserPhoneValidate(l.Phone) {
 			api.Message = "用户已存在"
 			api.SendError(context)
 			return
