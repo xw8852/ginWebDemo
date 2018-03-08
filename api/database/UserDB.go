@@ -7,8 +7,8 @@ import (
 
 type User struct {
 	Id         string
-	Phone      string
-	Password   string
+	Phone      *string
+	Password   *string
 	UpdateTime string
 }
 

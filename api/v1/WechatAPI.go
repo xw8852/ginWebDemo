@@ -10,18 +10,19 @@ import (
 	"ginWebDemo/api/database"
 	"time"
 	"math/rand"
-	"fmt"
+	"strconv"
+	"log"
 )
 
 type WechatCode struct {
 	Code string `form:"Code" json:"code" binding:"required"`
 }
 type WeChatInfo struct {
-	Openid      string  `json:"openid"`
-	Session_key string  `json:"session_key"`
-	Unionid     string  `json:"unionid"`
-	Errcode     int  `json:"errcode"`
-	Errmsg      string  `json:"errmsg"`
+	Openid      string `json:"openid"`
+	Session_key string `json:"session_key"`
+	Unionid     string `json:"unionid"`
+	Errcode     int    `json:"errcode"`
+	Errmsg      string `json:"errmsg"`
 }
 
 /**
@@ -32,6 +33,7 @@ func WechatLogin(g gin.IRoutes) {
 	g.POST("/wechat/login", func(c *gin.Context) {
 		var code WechatCode
 		err := c.BindJSON(&code)
+		log.Println("wechatinfo code:"+code.Code)
 		api := &api.HttpError{}
 		if err != nil {
 			util.Convert(err)
@@ -45,15 +47,16 @@ func WechatLogin(g gin.IRoutes) {
 			"&js_code=" + code.Code + "&grant_type=authorization_code")
 		defer response.Body.Close()
 		body, _ := ioutil.ReadAll(response.Body)
-		fmt.Println(string(body))
+		log.Println("wechatinfo"+string(body))
 		if response.StatusCode == 200 {
 			wechatinfo := WeChatInfo{}
 			json.Unmarshal(body, &wechatinfo)
-			if (wechatinfo.Openid != "") {
+			if (len(wechatinfo.Openid) > 0 ) {
 				user, ok := database.UserGetByWeChat(wechatinfo.Openid)
 				if (ok) {
 					api.Data = user
 					api.Message = "用户登录成功"
+					api.SendData(c)
 					return
 				}
 				logonName := ""
@@ -61,16 +64,21 @@ func WechatLogin(g gin.IRoutes) {
 					t := time.Time{}
 					index := database.UserCount()
 					index = index + t.Year() - t.Minute() - t.Second() - rand.Intn(100)
-					logonName = "wx" + string(index)
-					ok := database.RegisterUserByName(logonName, "123456")
-					if ok {
-						break
+					logonName = "wx" + strconv.Itoa(index)
+					log.Println("wechatinfo logonName"+logonName)
+					ok := database.UserLoginNameValidate(logonName)
+					if !ok {
+						ok = database.RegisterUserByName(logonName, "123456")
+						if ok {
+							break
+						}
 					}
 				}
 				user, _ = database.UserLoginByName(logonName, "123456")
 				database.InsertWeChatRelation(user.Id, wechatinfo.Openid)
 				api.Data = user
 				api.Message = "用户登录成功"
+				api.SendData(c)
 				return
 			} else {
 				api.Message = wechatinfo.Errmsg
