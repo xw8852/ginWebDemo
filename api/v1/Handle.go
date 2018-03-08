@@ -7,4 +7,5 @@ func Handle(g *gin.Engine){
 	SendMsgCode(group)
 	LoginUser(group)
 	RegisterUser(group)
+	WechatLogin(group)
 }

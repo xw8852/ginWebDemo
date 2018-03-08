@@ -19,7 +19,7 @@ func UserGetByWeChat(openid string) (User, bool) {
 	d := Default()
 	var user User
 	ok := false
-	row, e := d.Db.Query("select u.id,u.phone,u.updateTime from user u,user_wechat w where u.id = w.userid and w.wechatId = ？", openid)
+	row, e := d.Db.Query("select u.id,u.phone,u.updateTime from user u,user_wechat w where u.id = w.userid and w.wechatId = ?", openid)
 	if util.Convert(e) {
 		return user, ok
 	}

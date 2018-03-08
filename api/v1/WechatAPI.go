@@ -10,25 +10,26 @@ import (
 	"ginWebDemo/api/database"
 	"time"
 	"math/rand"
+	"fmt"
 )
 
 type WechatCode struct {
-	code string `form:"WechatCode" json:"WechatCode" binding:"required"`
+	Code string `form:"Code" json:"code" binding:"required"`
 }
 type WeChatInfo struct {
-	openid      string
-	session_key string
-	unionid     string
-	errcode     int
-	errmsg      string
+	Openid      string  `json:"openid"`
+	Session_key string  `json:"session_key"`
+	Unionid     string  `json:"unionid"`
+	Errcode     int  `json:"errcode"`
+	Errmsg      string  `json:"errmsg"`
 }
 
 /**
 * 微信
 * code 换取 session_key
  */
-func wechatLogin(g gin.IRoutes) {
-	g.POST("'/wechat/login", func(c *gin.Context) {
+func WechatLogin(g gin.IRoutes) {
+	g.POST("/wechat/login", func(c *gin.Context) {
 		var code WechatCode
 		err := c.BindJSON(&code)
 		api := &api.HttpError{}
@@ -41,14 +42,15 @@ func wechatLogin(g gin.IRoutes) {
 		response, _ := http.Get("https://api.weixin.qq.com/sns/jscode2session?" +
 			"appid=wxade5302ee9685fc8" +
 			"&secret=1037d10b8d1da6374606f511ee15cd25" +
-			"&js_code=" + code.code + "&grant_type=authorization_code")
+			"&js_code=" + code.Code + "&grant_type=authorization_code")
 		defer response.Body.Close()
 		body, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(string(body))
 		if response.StatusCode == 200 {
 			wechatinfo := WeChatInfo{}
 			json.Unmarshal(body, &wechatinfo)
-			if (wechatinfo.errmsg == "") {
-				user, ok := database.UserGetByWeChat(wechatinfo.openid)
+			if (wechatinfo.Openid != "") {
+				user, ok := database.UserGetByWeChat(wechatinfo.Openid)
 				if (ok) {
 					api.Data = user
 					api.Message = "用户登录成功"
@@ -66,12 +68,12 @@ func wechatLogin(g gin.IRoutes) {
 					}
 				}
 				user, _ = database.UserLoginByName(logonName, "123456")
-				database.InsertWeChatRelation(user.Id, wechatinfo.openid)
+				database.InsertWeChatRelation(user.Id, wechatinfo.Openid)
 				api.Data = user
 				api.Message = "用户登录成功"
 				return
 			} else {
-				api.Message = wechatinfo.errmsg
+				api.Message = wechatinfo.Errmsg
 				api.SendError(c)
 				return
 			}

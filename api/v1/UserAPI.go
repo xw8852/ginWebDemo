@@ -28,7 +28,7 @@ func LoginUser(g gin.IRoutes) {
 			api.SendError(context)
 			return
 		}
-		if !database.UserValidate(l.Phone) {
+		if !database.UserPhoneValidate(l.Phone) {
 			api.Message = "用户不存在"
 			api.SendError(context)
 		}
